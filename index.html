@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <script type="text/javascript" src="aes.js"></script>
+        <script type="text/javascript" src="sha256.min.js"></script>
+    </head>
+    <body onload="init()">
+        <label>密码:</label><input id="passwd"/><br/>
+        <label>字典:</label><input id="dict" value="没用的信息" onchange="updateDict()"></input><br/>
+        <label>明文:</label><textarea id="raw" cols="40" rows="10"></textarea><br/>
+        <button onclick="enc()">加密 v </button><button onclick="dec()">解密 ^ </button><br/>
+        <label>密文:</label><textarea id="sec" cols="40" rows="20"></textarea>
+        <script type="text/javascript">
+        function enc(){
+            var key = sha256.array(document.getElementById("passwd").value)
+            var iv = [ 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,35, 36 ];
+            var text = document.getElementById("raw").value;
+            var pad = text.length % 16
+            if (pad != 0) {
+                padstr = ''
+                for (;pad < 16; pad++) {
+                    padstr+=' '
+                }
+                text += padstr
+            }
+            var textBytes = aesjs.utils.utf8.toBytes(text);
+            var aesCbc = new aesjs.ModeOfOperation.cbc(key, iv);
+            var encryptedBytes = aesCbc.encrypt(textBytes);
+            var encryptedText = fromBytes(encryptedBytes);
+            document.getElementById("sec").value = encryptedText;
+        }
+        function dec(){
+            var key = sha256.array(document.getElementById("passwd").value)
+            var iv = [ 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,35, 36 ];
+            var text = document.getElementById("sec").value;
+            var textBytes = toBytes(text);
+            var aesCbc = new aesjs.ModeOfOperation.cbc(key, iv);
+            var decryptedBytes = aesCbc.decrypt(textBytes);
+            var decryptedText = aesjs.utils.utf8.fromBytes(decryptedBytes);
+            document.getElementById("raw").value = decryptedText.trim();
+        }
+        var dict = {}
+        function updateDict() {
+            dict.array = new Array()
+            dict.map = new Map()
+            text = document.getElementById("dict").value;
+            var i = 0
+            for (let c of text) {
+                if (dict.map[c]) {
+                    continue
+                }
+                dict.map[c] = i
+                dict.array.push(c)
+                i++
+            }
+        }
+        function init() {
+            updateDict()
+        }
+        function toBytes(text) {
+            var result = [];
+            var dictLen = dict.array.length;
+            if (dictLen < 2) {
+                return result;
+            }
+            var cLen = Math.ceil(Math.log(256)/Math.log(dictLen));
+            if (text.length % cLen) {
+                return result;
+            }
+            for (i = 0; i < text.length; i+=cLen) {
+                v = 0;
+                for (j = 0; j < cLen; j++) {
+                    v += dict.map[text[i+j]] * Math.pow(dictLen, j);
+                }
+                result.push(v);
+            }
+            return result;
+        }
+        function fromBytes(bytes) {
+            var result = [];
+            var dictLen = dict.array.length;
+            if (dictLen < 2) {
+                return "";
+            }
+            var cLen = Math.ceil(Math.log(256)/Math.log(dictLen));
+            for (i = 0; i < bytes.length; i++) {
+                v = bytes[i];
+                for (j = 0; j < cLen; j++) {
+                    result.push(dict.array[v%dictLen]);
+                    v = parseInt(v/dictLen);
+                }
+            }
+            return result.join('');
+        }
+         </script>
+    </body>
+</html>
