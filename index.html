@@ -44,7 +44,7 @@
             text = document.getElementById("dict").value;
             var i = 0
             for (let c of text) {
-                if (dict.map[c]) {
+                if (c in dict.map) {
                     continue
                 }
                 dict.map[c] = i
