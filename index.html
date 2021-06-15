@@ -14,15 +14,14 @@
             var key = sha256.array(document.getElementById("passwd").value)
             var iv = [ 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,35, 36 ];
             var text = document.getElementById("raw").value;
-            var pad = text.length % 16
-            if (pad != 0) {
-                padstr = ''
-                for (;pad < 16; pad++) {
-                    padstr+=' '
-                }
-                text += padstr
-            }
             var textBytes = aesjs.utils.utf8.toBytes(text);
+            var pad = textBytes.length % 16
+            if (pad != 0) {
+                for (;pad < 16; pad++) {
+                    text += ' '
+                }
+                textBytes = aesjs.utils.utf8.toBytes(text);
+            }
             var aesCbc = new aesjs.ModeOfOperation.cbc(key, iv);
             var encryptedBytes = aesCbc.encrypt(textBytes);
             var encryptedText = fromBytes(encryptedBytes);
