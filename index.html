@@ -2,13 +2,17 @@
     <head>
         <script type="text/javascript" src="aes.js"></script>
         <script type="text/javascript" src="sha256.min.js"></script>
+        <script type="text/javascript" src="elliptic.js"></script>
     </head>
     <body onload="init()">
         <label>密码:</label><input id="passwd"/><br/>
-        <label>字典:</label><input id="dict" value="没用的信息" onchange="updateDict()"></input><br/>
+        <label>字典:</label><input id="dict" value="最好是凑够十六个字，这样内容更短" onchange="updateDict()"></input><br/>
         <label>明文:</label><textarea id="raw" cols="40" rows="10"></textarea><br/>
         <button onclick="enc()">加密 v </button><button onclick="dec()">解密 ^ </button><br/>
-        <label>密文:</label><textarea id="sec" cols="40" rows="20"></textarea>
+        <label>密文:</label><textarea id="sec" cols="40" rows="20"></textarea><br/>
+        <label>公钥:</label><input id="pub" readonly='readonly'/><br/>
+        <label>对方公钥:</label><input id="peerpub" onchange="updateshare()"></input><br/>
+        <button onclick="updateshare()"> 协商密码 </button><br/>
         <script type="text/javascript">
         function enc(){
             var key = sha256.array(document.getElementById("passwd").value)
@@ -54,6 +58,7 @@
         }
         function init() {
             updateDict()
+            document.getElementById("pub").value = getpub();
         }
         function toBytes(text) {
             var result = [];
@@ -89,6 +94,18 @@
                 }
             }
             return result.join('');
+        }
+        var ec = new elliptic.ec('curve25519');
+        var key = ec.genKeyPair();
+        function getpub(){
+            return key.getPublic('hex')
+        }
+        function getshare(peerPub){
+            peer = ec.keyFromPublic(peerPub, "hex")
+            return key.derive(peer.getPublic()).toString(16)
+        }
+        function updateshare() {
+            document.getElementById("passwd").value = getshare(document.getElementById("peerpub").value)
         }
          </script>
     </body>
